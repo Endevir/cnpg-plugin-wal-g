@@ -24,7 +24,7 @@ import (
 	"github.com/cloudnative-pg/machinery/pkg/types"
 )
 
-// FindMostSuitableBackupForRecovery finds the backup that should be used to fulfil
+// FindMostSuitableBackupForRecovery finds the backup that should be used to fulfill
 // a PITR request via target parameters specified within RecoveryTarget.
 func (c *Client) FindMostSuitableBackupForRecovery(
 	ctx context.Context,

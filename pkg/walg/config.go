@@ -17,6 +17,7 @@ limitations under the License.
 package walg
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -177,6 +178,14 @@ func NewConfigFromBackupConfig(backupConfig *v1beta1.BackupConfigWithSecrets, pg
 
 	config.setWalgPrefetchDir()
 	return &config
+}
+
+// Hash returns a stable SHA-256 hex digest of the Config's JSON representation.
+// It can be used to compare Config objects to detect whether the configuration has changed
+// and need to rebuild a walg.Client.
+func (c *Config) Hash() string {
+	b, _ := json.Marshal(c)
+	return fmt.Sprintf("%x", sha256.Sum256(b))
 }
 
 // ToFile dumps config to a file in JSON format acceptable by wal-g via --config param
