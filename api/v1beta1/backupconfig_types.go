@@ -225,7 +225,33 @@ type BackupRetentionConfig struct {
 
 // BackupConfigStatus defines the observed state of BackupConfig.
 type BackupConfigStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Conditions represent the latest available observations of the BackupConfig state.
+	// +optional
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// LastSuccessfulBackupTime is the timestamp of the last successfully completed backup.
+	// +optional
+	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
+
+	// LastFailedBackupTime is the timestamp of the last backup that failed.
+	// +optional
+	LastFailedBackupTime *metav1.Time `json:"lastFailedBackupTime,omitempty"`
+
+	// LastUploadedWALTime is the timestamp of the last successfully uploaded WAL segment.
+	// +optional
+	LastUploadedWALTime *metav1.Time `json:"lastUploadedWALTime,omitempty"`
+
+	// FirstRecoverabilityPoint is the earliest timestamp from which the cluster
+	// can be recovered, based on available backups and WAL segments.
+	// +optional
+	FirstRecoverabilityPoint *metav1.Time `json:"firstRecoverabilityPoint,omitempty"`
+
+	// ConsumedStorageBytes is the total amount of storage space consumed by backups
+	// and WAL segments in the configured object storage, in bytes.
+	// +optional
+	ConsumedStorageBytes *int64 `json:"consumedStorageBytes,omitempty"`
 }
 
 // +kubebuilder:object:root=true
