@@ -28,8 +28,7 @@ import (
 	cnpgv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
 	v1beta1 "github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
 	"github.com/wal-g/cnpg-plugin-wal-g/internal/common"
-	cmd "github.com/wal-g/cnpg-plugin-wal-g/internal/util/cmd"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 )
 
 // WALServiceImplementation is the implementation of the WAL Service
@@ -90,10 +89,8 @@ func (w WALServiceImplementation) Archive(
 		return nil, fmt.Errorf("failed to get backup config: %w", err)
 	}
 
-	result, err := cmd.New("wal-g", "wal-push", request.SourceFileName).
-		WithContext(childrenCtx).
-		WithEnv(walg.NewConfigFromBackupConfig(backupConfig, pgMajorVersion).ToEnvMap()).
-		Run()
+	walgClient := walg.NewClientFromBackupConfig(backupConfig, pgMajorVersion)
+	result, err := walgClient.WALPush(childrenCtx, request.SourceFileName)
 
 	logger = logger.WithValues("stdout", string(result.Stdout()), "stderr", string(result.Stderr()))
 
@@ -131,10 +128,8 @@ func (w WALServiceImplementation) Restore(
 		return nil, fmt.Errorf("failed to get backup config: %w", err)
 	}
 
-	result, err := cmd.New("wal-g", "wal-fetch", request.SourceWalName, request.DestinationFileName).
-		WithContext(childrenCtx).
-		WithEnv(walg.NewConfigFromBackupConfig(backupConfig, pgMajorVersion).ToEnvMap()).
-		Run()
+	walgClient := walg.NewClientFromBackupConfig(backupConfig, pgMajorVersion)
+	result, err := walgClient.WALFetch(childrenCtx, request.SourceWalName, request.DestinationFileName)
 
 	logger = logger.WithValues("stdout", string(result.Stdout()), "stderr", string(result.Stderr()))
 

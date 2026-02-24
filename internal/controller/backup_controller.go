@@ -29,7 +29,7 @@ import (
 	"github.com/samber/lo"
 	v1beta1 "github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
 	"github.com/wal-g/cnpg-plugin-wal-g/internal/common"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -241,7 +241,7 @@ func (r *BackupReconciler) reconcileBackupPermanence(ctx context.Context, backup
 	// so it is enough to check that there's only 1 OwnerReference
 	backupIsManual := len(backup.OwnerReferences) == 1
 	if backupIsManual {
-		err = walg.MarkBackupPermanent(ctx, backupConfigWithSecrets, pgVersion, backup.Status.BackupID)
+		err = walg.NewClientFromBackupConfig(backupConfigWithSecrets, pgVersion).MarkBackupPermanent(ctx, backup.Status.BackupID)
 	}
 
 	// We do NOT unmark backups as inpermanent - it will be done during backup deletion operation
