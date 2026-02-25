@@ -88,11 +88,6 @@ Build docker image locally
 make docker-build
 ```
 
-Install the CRDs into the cluster:
-```sh
-make install
-```
-
 Deploy the Manager to the cluster with the image specified by `IMG` (using deploy-kind, which injects `imagePullPolicy: Never`):
 ```sh
 make deploy-kind

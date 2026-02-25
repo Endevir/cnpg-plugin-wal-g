@@ -18,6 +18,23 @@ kubectl apply -f ./metrics-server.yaml
 # Install cert-manager
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
 
+# Install minio
+helm repo add minio https://charts.min.io/
+helm upgrade --install \
+  --set resources.requests.memory=512Mi \
+  --set replicas=1 \
+  --set mode=standalone \
+  --set persistence.enabled=false \
+  --set rootUser=rootuser,rootPassword=rootpass123 \
+  --set 'buckets[0].name=test-bucket-1,buckets[0].policy=none,buckets[0].purge=false' \
+  --set 'buckets[1].name=test-bucket-2,buckets[1].policy=none,buckets[1].purge=false' \
+  minio minio/minio
+
+# To access minio with kubectl:
+# MINIO_POD_NAME=$(kubectl get pods --namespace default -l "release=minio" -o jsonpath="{.items[0].metadata.name}")
+# kubectl exec $MINIO_POD_NAME -- mc alias set local http://localhost:9000 rootuser rootpass123
+# kubectl exec $MINIO_POD_NAME -- mc ls local
+# kubectl exec $MINIO_POD_NAME -- mc ls local/test-bucket-1
 
 # Install CNPG
 kubectl apply --server-side -f \

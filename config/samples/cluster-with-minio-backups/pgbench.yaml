@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-cluster-pgbench
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbench
+  template:
+    metadata:
+      labels:
+        app: pgbench
+    spec:
+      restartPolicy: Always  # important to avoid infinite restart of completed pods
+      containers:
+        - name: pgbench
+          image: postgres:17
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "128Mi"
+            limits: {}
+          env:
+            - name: PGHOST
+              value: sample-cluster-rw
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: sample-cluster-app
+                  key: user
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sample-cluster-app
+                  key: password
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: sample-cluster-app
+                  key: dbname
+          command: ["bash", "-c"]
+          args:
+            - |
+              set -euxo pipefail
+              echo "Initializing benchmark database if needed...";
+              pgbench -i -d $PGDATABASE || true;
+              echo "Running pgbench...";
+              pgbench -b tpcb-like --time 999999 -d $PGDATABASE
+---
