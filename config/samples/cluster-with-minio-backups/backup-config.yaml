@@ -1,0 +1,49 @@
+apiVersion: cnpg-extensions.yandex.cloud/v1beta1
+kind: BackupConfig
+metadata:
+  name: sample-cluster-backup-config
+spec:
+  downloadFileRetries: 15  # How many times retry if storage is unavailable (optional, default: 15)
+  deltaMaxSteps: 7 # How many incremental backups can be created before creating new full backup (optional, default: 0)
+  storage:
+    type: s3  # Type of storage (only S3 supported currently)
+    s3:       # S3 storage configuration
+      prefix: s3://test-bucket-1/sample-cluster # Prefix for backups, should be unique among any other BackupConfig
+      region: us-east1
+      endpointUrl: http://minio.default.svc:9000
+      forcePathStyle: true
+      storageClass: STANDARD
+      accessKeyId:
+        name: "in-cluster-minio-credentials"
+        key: "accessKey"
+      accessKeySecret:
+        name: "in-cluster-minio-credentials"
+        key: "secret"
+  retention:  # Remove this section to disable retention policy
+    ignoreForManualBackups: true  # Set to true to keep manual backups infinitely.
+                                  # IMPORTANT: set ".spec.backupOwnerReference" on ScheduledBackup resources to "self"
+                                  # to distinguish manual backups (created directly, w/o ownerReference) from automatic
+    minBackupsToKeep: 5           # Minimal number of healthy backups to be kept, overrides deleteBackupsAfter
+    deleteBackupsAfter: 1h        # Delete backups older than this value. `minBackupsToKeep` has higher priority
+  encryption:  # Remove this section to disable encryption
+    method: libsodium  # Use symmetric entryption via libsodium
+    encryptionSecret: sample-cluster-encryption  # Name of secret with encryption credentials 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: in-cluster-minio-credentials
+type: Opaque
+stringData:
+  accessKey: rootuser
+  secret: rootpass123
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sample-cluster-encryption
+type: Opaque
+stringData:
+  # MUST have name "libsodiumKey" and value - hex-encoded 32-bytes length key 
+  # i.e. created with `openssl rand -hex 32`
+  libsodiumKey: 27abac61d8b9a52e94e65208d6974d555db32babd073913a9b52f788a58378f2
