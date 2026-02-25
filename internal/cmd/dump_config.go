@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

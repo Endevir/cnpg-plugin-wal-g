@@ -30,8 +30,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
 	"github.com/wal-g/cnpg-plugin-wal-g/internal/common"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/cmd"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -107,10 +106,8 @@ func (b BackupServiceImplementation) Backup(
 
 	logger.WithValues("pgdata", pgdata, "user-data", string(backupParamsJSON))
 
-	result, err := cmd.New("wal-g", "backup-push", pgdata, "--add-user-data", string(backupParamsJSON)).
-		WithContext(logr.NewContext(ctx, logger)).
-		WithEnv(walg.NewConfigFromBackupConfig(backupConfigWithSecrets, pgMajorVersion).ToEnvMap()).
-		Run()
+	walgClient := walg.NewClientFromBackupConfig(backupConfigWithSecrets, pgMajorVersion)
+	result, err := walgClient.BackupPush(logr.NewContext(ctx, logger), pgdata, string(backupParamsJSON))
 
 	if err != nil {
 		logger.Error(err, "Error on wal-g backup-push", "stdout", string(result.Stdout()), "stderr", string(result.Stderr()))
@@ -144,12 +141,13 @@ func (b BackupServiceImplementation) buildBackupResult(
 	pgMajorVersion int,
 	backupParams map[string]any,
 ) (*cnpgbackup.BackupResult, error) {
-	walgBackupList, err := walg.GetBackupsList(ctx, config, pgMajorVersion)
+	walgClient := walg.NewClientFromBackupConfig(config, pgMajorVersion)
+	walgBackupList, err := walgClient.GetBackupsList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list wal-g backups: %w", err)
 	}
 
-	currentBackupMetadata, err := walg.GetBackupByUserData(ctx, walgBackupList, backupParams)
+	currentBackupMetadata, err := walgClient.GetBackupByUserData(ctx, walgBackupList, backupParams)
 	if currentBackupMetadata == nil || err != nil {
 		return nil, fmt.Errorf("cannot make backup metadata, medatata: %v err: %w", currentBackupMetadata, err)
 	}

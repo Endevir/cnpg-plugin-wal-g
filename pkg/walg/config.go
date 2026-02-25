@@ -17,6 +17,7 @@ limitations under the License.
 package walg
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -95,6 +96,28 @@ func NewConfigWithDefaults() Config {
 	return cfg
 }
 
+// Client encapsulates all wal-g operations for a given configuration.
+// Create it with NewClient after building a Config via NewConfigFromBackupConfig.
+type Client struct {
+	config *Config
+}
+
+// NewClient creates a new Client from the provided Config.
+func NewClient(config *Config) *Client {
+	return &Client{config: config}
+}
+
+// NewClientFromBackupConfig is a convenience constructor that builds a Config from a
+// BackupConfigWithSecrets and pgMajorVersion, then wraps it in a Client.
+func NewClientFromBackupConfig(backupConfig *v1beta1.BackupConfigWithSecrets, pgMajorVersion int) *Client {
+	return NewClient(NewConfigFromBackupConfig(backupConfig, pgMajorVersion))
+}
+
+// Config returns the underlying Config held by this Client.
+func (c *Client) Config() *Config {
+	return c.config
+}
+
 func NewConfigFromBackupConfig(backupConfig *v1beta1.BackupConfigWithSecrets, pgMajorVersion int) *Config {
 	config := NewConfigWithDefaults()
 
@@ -155,6 +178,14 @@ func NewConfigFromBackupConfig(backupConfig *v1beta1.BackupConfigWithSecrets, pg
 
 	config.setWalgPrefetchDir()
 	return &config
+}
+
+// Hash returns a stable SHA-256 hex digest of the Config's JSON representation.
+// It can be used to compare Config objects to detect whether the configuration has changed
+// and need to rebuild a walg.Client.
+func (c *Config) Hash() string {
+	b, _ := json.Marshal(c)
+	return fmt.Sprintf("%x", sha256.Sum256(b))
 }
 
 // ToFile dumps config to a file in JSON format acceptable by wal-g via --config param

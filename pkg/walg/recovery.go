@@ -24,9 +24,9 @@ import (
 	"github.com/cloudnative-pg/machinery/pkg/types"
 )
 
-// FindBackupInfo finds the backup info that should be used to file
-// a PITR request via target parameters specified within `RecoveryTarget`
-func FindMostSuitableBackupForRecovery(
+// FindMostSuitableBackupForRecovery finds the backup that should be used to fulfill
+// a PITR request via target parameters specified within RecoveryTarget.
+func (c *Client) FindMostSuitableBackupForRecovery(
 	ctx context.Context,
 	backupList []BackupMetadata,
 	recoveryTarget cnpgv1.RecoveryTarget,
@@ -34,7 +34,7 @@ func FindMostSuitableBackupForRecovery(
 	// Check that BackupID is not empty. In such case, always use the
 	// backup ID provided by the user.
 	if recoveryTarget.GetBackupID() != "" {
-		return GetBackupByName(ctx, backupList, recoveryTarget.GetBackupID()), nil
+		return c.GetBackupByName(ctx, backupList, recoveryTarget.GetBackupID()), nil
 	}
 
 	// Set the timeline

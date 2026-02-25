@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
 	"github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

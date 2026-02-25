@@ -28,8 +28,7 @@ import (
 
 	"github.com/wal-g/cnpg-plugin-wal-g/api/v1beta1"
 	"github.com/wal-g/cnpg-plugin-wal-g/internal/common"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/cmd"
-	"github.com/wal-g/cnpg-plugin-wal-g/internal/util/walg"
+	"github.com/wal-g/cnpg-plugin-wal-g/pkg/walg"
 )
 
 const (
@@ -106,16 +105,17 @@ func (r RestoreJobHooksImpl) Restore(
 		)
 	}
 
-	walgBackupList, err := walg.GetBackupsList(ctx, restoreConfigWithSecrets, pgMajorVersion)
+	walgClient := walg.NewClientFromBackupConfig(restoreConfigWithSecrets, pgMajorVersion)
+	walgBackupList, err := walgClient.GetBackupsList(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list wal-g backups: %w", err)
 	}
 
 	var walgBackup *walg.BackupMetadata
 	if cluster.Spec.Bootstrap.Recovery.RecoveryTarget == nil {
-		walgBackup, err = walg.GetLatestBackup(ctx, walgBackupList)
+		walgBackup, err = walgClient.GetLatestBackup(ctx, walgBackupList)
 	} else {
-		walgBackup, err = walg.FindMostSuitableBackupForRecovery(ctx, walgBackupList, *cluster.Spec.Bootstrap.Recovery.RecoveryTarget)
+		walgBackup, err = walgClient.FindMostSuitableBackupForRecovery(ctx, walgBackupList, *cluster.Spec.Bootstrap.Recovery.RecoveryTarget)
 	}
 
 	if err != nil || walgBackup == nil {
@@ -152,11 +152,7 @@ func (r RestoreJobHooksImpl) downloadBackupIntoDir(
 		return fmt.Errorf("backup request failed: no PG_MAJOR env variable specified")
 	}
 
-	result, err := cmd.New("wal-g", "backup-fetch", "--turbo", targetDir, walgBackupName).
-		WithContext(ctx).
-		WithEnv(walg.NewConfigFromBackupConfig(config, pgMajorVersion).ToEnvMap()).
-		Run()
-
+	result, err := walg.NewClientFromBackupConfig(config, pgMajorVersion).BackupFetch(ctx, targetDir, walgBackupName)
 	if err != nil {
 		logger.Error(err, "Error on wal-g backup-fetch", "stdout", string(result.Stdout()), "stderr", string(result.Stderr()))
 		return fmt.Errorf("failed to do wal-g backup-fetch: %w", err)
